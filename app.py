@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("aRepüléstervező kalkulátor")
+st.title("Repüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -111,7 +111,7 @@ if st.button("▶️ Számítás indítása"):
         else:
             st.markdown("### Multispektrális kamera")
             repmag_m = fo_kamera['repmag_m']
-            gsd_multi_cm = (repmag_m * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
+            gsd_multi_cm = (repmag_m * multi['szenzor_szelesseg_mm'] * GSD_KORREKCIOS_SZORZO_MULTI) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
             st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_multi_cm:.2f} cm/pixel")
             st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s")
 
