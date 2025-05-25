@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("AGRON Repüléstervező kalkulátor")
+st.title("Repüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -30,8 +30,9 @@ available_drones = {
 # Konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 2.0  # korrigált a DJI alapján
+GSD_KORREKCIOS_SZORZO = 2.0  # korrekció a DJI alapján
 DRON_MAX_SEBESSEG = 15.0
+MULTI_GSD_SZORZO = 1 / 0.56  # kb. 1.79
 
 # Beviteli mezők
 selected_drone_name = st.selectbox("Drón kiválasztása", list(available_drones.keys()))
@@ -103,15 +104,10 @@ if st.button("▶️ Számítás indítása"):
 
     if kamera_mod == "RGB + multispektrális":
         st.markdown("### Multispektrális kamera")
-
-        # Multispektrális GSD számítása RGB repülési magasságból
-        rgb_repmag = eredmeny_rgb['repmag_m']
-        gsd_multi_cm = (rgb_repmag * multi["szenzor_szelesseg_mm"]) / (multi["fokusz_mm"] * multi["képszélesség_px"]) * 100
-
-        # Multispektrális max sebesség: RGB vmax felével korlátozva
+        multi_gsd = gsd_cm * MULTI_GSD_SZORZO
         multi_vmax = eredmeny_rgb['vmax_mps'] / 2
 
-        st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_multi_cm:.2f} cm/pixel")
+        st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {multi_gsd:.2f} cm/pixel")
         st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {multi_vmax:.2f} m/s")
         st.warning("Ha a Multi kamerák is használatban vannak, azok sebességkorlátját figyelembe kell venni.")
 
