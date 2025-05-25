@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("Repüléstervező kalkulátor")
+st.title("aRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -33,8 +33,8 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO_RGB = 0.49  # Finomhangolt a DJI RGB értékeihez
-GSD_KORREKCIOS_SZORZO_MULTI = 0.60  # Korábban már megfelelő volt
+GSD_KORREKCIOS_SZORZO_RGB = 0.49
+GSD_KORREKCIOS_SZORZO_MULTI = 0.60
 DRON_MAX_SEBESSEG = 15.0  # m/s
 
 multi = available_drones[selected_drone_name]["Multispektrális"]
@@ -91,9 +91,9 @@ if st.button("▶️ Számítás indítása"):
     eredmenyek = [("RGB", szamol(rgb, gsd_cm, side_overlap_pct, GSD_KORREKCIOS_SZORZO_RGB))]
 
     if kamera_mod == "RGB + multispektrális":
-        eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct, GSD_KORREKCIOS_SZORZO_MULTI)))
+        eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct, GSD_KORREKCIOS_SZORZO_RGB)))
 
-    fo_kamera = eredmenyek[0][1]  # mindig RGB az elsődleges
+    fo_kamera = eredmenyek[0][1]
 
     st.markdown("## Eredmények")
 
@@ -108,13 +108,11 @@ if st.button("▶️ Számítás indítása"):
             else:
                 st.markdown(f"**Becsült repülési idő:** ~{eredeti['teljes_ido_min']:.1f} perc")
             st.markdown(f"**Szükséges akkumulátor:** kb. {eredeti['akku_igeny']} db")
-
         else:
             st.markdown("### Multispektrális kamera")
             repmag_m = fo_kamera['repmag_m']
-            gsd_multi_cm = (repmag_m * GSD_KORREKCIOS_SZORZO_MULTI * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
-            gsd_szoveg = f"{gsd_multi_cm:.2f} cm/pixel"
-            st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_szoveg}")
+            gsd_multi_cm = (repmag_m * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
+            st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_multi_cm:.2f} cm/pixel")
             st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s")
 
     if kamera_mod == "RGB + multispektrális":
