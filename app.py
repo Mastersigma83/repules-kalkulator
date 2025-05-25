@@ -91,7 +91,7 @@ if st.button("▶️ Számítás indítása"):
         fo_kamera = eredmenyek[0][1]
 
     for nev, eredeti in eredmenyek:
-        st.subheader(f"Eredmények – {nev} kamera")        szoveg = (
+        st.subheader(f"Eredmények – {nev} kamera")                szoveg = (
             f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
             f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
             f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
@@ -99,7 +99,7 @@ if st.button("▶️ Számítás indítása"):
                 f"**GSD marad:** {side_kompromisszum['gsd_cm']} cm/pixel  \n"
                 f"**Repidő:** {side_kompromisszum['teljes_ido_min']:.1f} perc"
             )
-            st.markdown(szoveg)
+                    st.markdown(szoveg)
         else:
             gsd_kompromisszum = None
             gsd_cand = gsd_cm + 0.1
