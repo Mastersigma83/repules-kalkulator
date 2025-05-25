@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("Repüléstervező kalkulátor")
+st.title("dRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
