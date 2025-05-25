@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("AGRON Repüléstervező kalkulátor")
+st.title("🚁 Repüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít kiszámolni, hogy adott terület, 
@@ -84,22 +84,34 @@ if st.button("▶️ Számítás indítása"):
 
     if kamera_mod == "RGB + multispektrális":
         eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct)))
-        fo_kamera = eredmenyek[-1][1]
-    else:
-        fo_kamera = eredmenyek[0][1]
+
+    fo_kamera = eredmenyek[0][1]  # mindig RGB az elsődleges
 
     for nev, eredeti in eredmenyek:
         st.subheader(f"Eredmények – {nev} kamera")
-        st.markdown(
-            f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
-            f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
-            f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
-            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc  \n"
-            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
-        )
+
+        if nev == "RGB":
+            st.markdown(
+                f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
+                f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
+                f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
+                f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc  \n"
+                f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
+            )
+        else:
+            # RGB GSD-hez tartozó multi GSD kiszámítása
+            repmag_m = fo_kamera['repmag_m']
+            kep_szelesseg_m_multi = repmag_m * multi['szenzor_szelesseg_mm'] / multi['fokusz_mm']
+            gsd_multi_cm = (kep_szelesseg_m_multi / multi['képszélesség_px']) * 100
+
+            gsd_szoveg = f"{gsd_multi_cm:.2f} cm/pixel"
+            st.markdown(
+                f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_szoveg}  \n"
+                f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s"
+            )
 
     if kamera_mod == "RGB + multispektrális":
-        st.warning("Ha a Multi kamerák is használatban vannak, azok eredményét kell elsődlegesen figyelembe venni!")
+        st.warning("Ha a Multi kamerák is használatban vannak, azok sebességkorlátját figyelembe kell venni, de az akkumulátorigényt az RGB szerint számoljuk!")
 
     if elerheto_akkuk >= fo_kamera['akku_igeny']:
         st.success(f"{elerheto_akkuk} akkumulátor elegendő ehhez a repüléshez.")
@@ -107,4 +119,4 @@ if st.button("▶️ Számítás indítása"):
         max_ido = elerheto_akkuk * AKKU_IDO_PERCBEN
         hianyzo_akkuk = fo_kamera['akku_igeny'] - elerheto_akkuk
         st.warning(f"Nincs elég akku: max. {max_ido:.1f} perc repülési idő áll rendelkezésre.")
-        st.info(f"A repülés teljesítéséhez további {hianyzo_akkuk} akkumulátorra lenne szükség a jelenlegi beállításokkal.")
+        st.info(f"A repülés teljesítéséhez további {hianyzo_akkuk} akkumulátorra lenne szükség az RGB beállítások megtartásával.")
