@@ -27,16 +27,14 @@ available_drones = {
     }
 }
 
+selected_drone_name = st.selectbox("Drón kiválasztása", list(available_drones.keys()))
+kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
+
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 1.13
-MULTI_GSD_KORREKCIOS_SZORZO = 2.56
+GSD_KORREKCIOS_SZORZO = 1.274  # DJI pontosítva
 DRON_MAX_SEBESSEG = 15.0  # m/s
-
-# Bemenetek
-selected_drone_name = st.selectbox("Drón kiválasztása", list(available_drones.keys()))
-kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 
 multi = available_drones[selected_drone_name]["Multispektrális"]
 min_gsd = (12 * multi["szenzor_szelesseg_mm"]) / (multi["fokusz_mm"] * multi["képszélesség_px"]) * 100
@@ -93,13 +91,12 @@ if st.button("▶️ Számítás indítása"):
     if kamera_mod == "RGB + multispektrális":
         eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct)))
 
-    fo_kamera = eredmenyek[0][1]  # RGB az alap
-
+    fo_kamera = eredmenyek[0][1]
     st.markdown("## Eredmények")
 
     for nev, eredeti in eredmenyek:
+        st.markdown(f"### {nev} kamera")
         if nev == "RGB":
-            st.markdown("### RGB kamera")
             st.markdown(f"**Repülési magasság:** kb. {eredeti['repmag_m']:.1f} m")
             st.markdown(f"**Sávszélesség:** kb. {eredeti['savszel_m']:.1f} m")
             st.markdown(f"**Max. repülési sebesség:** kb. {eredeti['vmax_mps']:.2f} m/s")
@@ -108,18 +105,10 @@ if st.button("▶️ Számítás indítása"):
             else:
                 st.markdown(f"**Becsült repülési idő:** ~{eredeti['teljes_ido_min']:.1f} perc")
             st.markdown(f"**Szükséges akkumulátor:** kb. {eredeti['akku_igeny']} db")
-
         else:
             repmag_m = fo_kamera['repmag_m']
-            gsd_multi_cm = (
-                repmag_m * multi['szenzor_szelesseg_mm']
-            ) / (
-                multi['fokusz_mm'] * multi['képszélesség_px']
-            ) * 100 * MULTI_GSD_KORREKCIOS_SZORZO
-
-            gsd_szoveg = f"{gsd_multi_cm:.2f} cm/pixel"
-            st.markdown("### Multispektrális kamera")
-            st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_szoveg}")
+            gsd_multi_cm = (repmag_m * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100 * 2.31
+            st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_multi_cm:.2f} cm/pixel")
             st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s")
 
     if kamera_mod == "RGB + multispektrális":
