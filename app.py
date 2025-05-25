@@ -114,7 +114,7 @@ if st.button("▶️ Számítás indítása"):
             # RGB GSD-hez tartozó multispektrális GSD kiszámítása (helyesen, az RGB repmag alapján)
             repmag_m = fo_kamera['repmag_m']
             kep_szelesseg_m_multi = repmag_m * multi['szenzor_szelesseg_mm'] / multi['fokusz_mm']
-            gsd_multi_cm = (kep_szelesseg_m_multi / multi['képszélesség_px']) * 100
+            gsd_multi_cm = fo_kamera['repmag_m'] * (multi['szenzor_szelesseg_mm'] / (multi['fokusz_mm'] * multi['képszélesség_px'])) * 100
 
             gsd_szoveg = f"{gsd_multi_cm:.2f} cm/pixel"
             st.markdown(
