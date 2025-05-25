@@ -1,10 +1,10 @@
 import streamlit as st
 import math
 
-st.title("Repüléstervező kalkulátor")
+st.title("AGRON Repüléstervező kalkulátor")
 
 st.markdown("""
-Ez az alkalmazás segít beállítani a drónod agrárfelmérésekhez / térképezéshez.
+Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
 """)
 
 # Drónválasztás és kameramódok
@@ -33,12 +33,13 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 1.13
-DRON_MAX_SEBESSEG = 15.0
+DRON_MAX_SEBESSEG = 15.0  # m/s
 
+# Minimum GSD számítása a multispektrális adatok alapján
 multi = available_drones[selected_drone_name]["Multispektrális"]
 min_gsd = (12 * multi["szenzor_szelesseg_mm"]) / (multi["fokusz_mm"] * multi["képszélesség_px"]) * 100
 
+# Felhasználói bemenetek
 gsd_cm = st.number_input("Cél GSD (cm/pixel)", min_value=round(min_gsd, 2), value=2.0, step=0.1)
 shutter_input = st.text_input("Záridő (1/x formátumban) (Terület felett, lefelé fordított kamerával – leolvasott érték!)", value="1000")
 side_overlap_pct = st.selectbox("Oldalirányú átfedés (%)", options=list(range(60, 91)), index=10)
@@ -46,16 +47,14 @@ front_overlap_pct = st.selectbox("Soron belüli átfedés (%)", options=list(ran
 terulet_ha = st.number_input("Felvételezni kívánt terület (hektár)", min_value=0.1, value=10.0, step=0.1, format="%.1f")
 elerheto_akkuk = st.number_input("Elérhető 100%-os akkumulátorok (db)", min_value=1, value=1, step=1)
 
-def szamol(kamera, gsd_cm_val, side_overlap_val):
-    gsd_m = gsd_cm_val / 100
-    repmag_cm = ((gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"]) / kamera["szenzor_szelesseg_mm"]) / 2
-    repmag_m = repmag_cm / 100
+def szamol(kamera, repmag_m, side_overlap_val, shutter_speed):
     kep_szelesseg_m = repmag_m * kamera["szenzor_szelesseg_mm"] / kamera["fokusz_mm"]
     savszel_m = kep_szelesseg_m * (1 - side_overlap_val / 100)
 
-    shutter_speed = 1 / float(shutter_input)
-    vmax_blur = gsd_m * MAX_PIXEL_ELMOZDULAS / shutter_speed
-    vmax_write = gsd_m * kamera["képszélesség_px"] / kamera["min_írási_idő_s"]
+    gsd_cm_val = (repmag_m * kamera["szenzor_szelesseg_mm"]) / (kamera["fokusz_mm"] * kamera["képszélesség_px"]) * 100
+
+    vmax_blur = (gsd_cm_val / 100) * MAX_PIXEL_ELMOZDULAS / shutter_speed
+    vmax_write = (gsd_cm_val / 100) * kamera["képszélesség_px"] / kamera["min_írási_idő_s"]
     vmax_mps = min(vmax_blur, vmax_write) * kamera["korrekcio"]
     vmax_mps = min(vmax_mps, DRON_MAX_SEBESSEG)
 
@@ -66,7 +65,6 @@ def szamol(kamera, gsd_cm_val, side_overlap_val):
 
     ido_sec = teljes_ut_m / vmax_mps
     ido_min = ido_sec / 60
-
     ora = int(ido_min // 60)
     perc = int(ido_min % 60)
     ido_ora_perc = f"{ora} óra {perc} perc" if ido_min >= 60 else ""
@@ -75,7 +73,6 @@ def szamol(kamera, gsd_cm_val, side_overlap_val):
         "repmag_m": repmag_m,
         "gsd_cm": gsd_cm_val,
         "side_overlap": side_overlap_val,
-        "repmag_m": repmag_m,
         "savszel_m": savszel_m,
         "vmax_mps": vmax_mps,
         "teljes_ido_min": ido_min,
@@ -84,29 +81,43 @@ def szamol(kamera, gsd_cm_val, side_overlap_val):
     }
 
 if st.button("▶️ Számítás indítása"):
-    rgb = available_drones[selected_drone_name]["RGB"]
-    multi = available_drones[selected_drone_name]["Multispektrális"]
+    shutter_speed = 1 / float(shutter_input)
 
-    eredmenyek = [("RGB", szamol(rgb, gsd_cm, side_overlap_pct))]
+    # RGB repmag számítás (klasszikus képlet / 2)
+    rgb = available_drones[selected_drone_name]["RGB"]
+    repmag_cm_rgb = (gsd_cm * rgb["fokusz_mm"] * rgb["képszélesség_px"]) / rgb["szenzor_szelesseg_mm"]
+    repmag_m_rgb = repmag_cm_rgb / 100 / 2
+
+    eredmenyek = [("RGB", szamol(rgb, repmag_m_rgb, side_overlap_pct, shutter_speed))]
 
     if kamera_mod == "RGB + multispektrális":
-        eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm * (1 / 0.56), side_overlap_pct)))
+        # Multi GSD számítása: RGB GSD × 1 / 0.56
+        gsd_multi_cm = gsd_cm * (1 / 0.56)
+        multi_repmag_cm = (gsd_multi_cm * multi["fokusz_mm"] * multi["képszélesség_px"]) / multi["szenzor_szelesseg_mm"]
+        multi_repmag_m = multi_repmag_cm / 100
+        eredmenyek.append(("Multispektrális", szamol(multi, multi_repmag_m, side_overlap_pct, shutter_speed)))
 
-    fo_kamera = eredmenyek[0][1]
+    fo_kamera = eredmenyek[0][1]  # RGB az alap
 
     st.markdown("## Eredmények")
 
     for nev, eredeti in eredmenyek:
         st.markdown(f"### {nev} kamera")
+
         st.markdown(f"**Repülési magasság:** kb. {eredeti['repmag_m']:.1f} m")
         st.markdown(f"**Sávszélesség:** kb. {eredeti['savszel_m']:.1f} m")
         st.markdown(f"**Max. repülési sebesség:** kb. {eredeti['vmax_mps']:.2f} m/s")
+
         if nev == "RGB":
             if eredeti['ido_ora_perc']:
                 st.markdown(f"**Becsült repülési idő:** ~{eredeti['ido_ora_perc']}")
             else:
                 st.markdown(f"**Becsült repülési idő:** ~{eredeti['teljes_ido_min']:.1f} perc")
-            st.markdown(f"**Sükséges akkumulátor:** kb. {eredeti['akku_igeny']} db")
+            st.markdown(f"**Szükséges akkumulátor:** kb. {eredeti['akku_igeny']} db")
+
+        if nev == "Multispektrális":
+            multi_gsd = gsd_cm * (1 / 0.56)
+            st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {multi_gsd:.2f} cm/pixel")
 
     if kamera_mod == "RGB + multispektrális":
         st.warning("Ha a Multi kamerák is használatban vannak, azok sebességkorlátját figyelembe kell venni, de az akkumulátorigényt az RGB szerint számoljuk!")
