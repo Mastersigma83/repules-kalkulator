@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("vRepüléstervező kalkulátor")
+st.title("Repüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -99,28 +99,22 @@ if st.button("▶️ Számítás indítása"):
     for nev, eredeti in eredmenyek:
         if nev == "RGB":
             st.markdown("### RGB kamera")
+            st.markdown(f"**Repülési magasság:** kb. {eredeti['repmag_m']:.1f} m")
+            st.markdown(f"**Sávszélesség:** kb. {eredeti['savszel_m']:.1f} m")
+            st.markdown(f"**Max. repülési sebesség:** kb. {eredeti['vmax_mps']:.2f} m/s")
+            if eredeti['ido_ora_perc']:
+                st.markdown(f"**Becsült repülési idő:** ~{eredeti['ido_ora_perc']}")
+            else:
+                st.markdown(f"**Becsült repülési idő:** ~{eredeti['teljes_ido_min']:.1f} perc")
+            st.markdown(f"**Szükséges akkumulátor:** kb. {eredeti['akku_igeny']} db")
+
         else:
             st.markdown("### Multispektrális kamera")
-
-        if nev == "RGB":
-            st.markdown(
-                f"**Repülési magasság:** kb. {eredeti['repmag_m']:.1f} m  \n"
-                f"**Sávszélesség:** kb. {eredeti['savszel_m']:.1f} m  \n"
-                f"**Max. repülési sebesség:** kb. {eredeti['vmax_mps']:.2f} m/s  \n"
-                f"**Becsült repülési idő:** ~{eredeti['ido_ora_perc']}" if eredeti['ido_ora_perc'] else f"**Becsült repülési idő:** ~{eredeti['teljes_ido_min']:.1f} perc" + "  \n"
-                f"**Szükséges akkumulátor:** kb. {eredeti['akku_igeny']} db"
-            )
-        else:
-            # RGB GSD-hez tartozó multispektrális GSD kiszámítása (helyesen, az RGB repmag alapján)
             repmag_m = fo_kamera['repmag_m']
-            kep_szelesseg_m_multi = repmag_m * multi['szenzor_szelesseg_mm'] / multi['fokusz_mm']
-            gsd_multi_cm = (fo_kamera['repmag_m'] * GSD_KORREKCIOS_SZORZO * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
-
+            gsd_multi_cm = (repmag_m * GSD_KORREKCIOS_SZORZO * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
             gsd_szoveg = f"{gsd_multi_cm:.2f} cm/pixel"
-            st.markdown(
-                f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_szoveg}  \n"
-                f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s"
-            )
+            st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_szoveg}")
+            st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s")
 
     if kamera_mod == "RGB + multispektrális":
         st.warning("Ha a Multi kamerák is használatban vannak, azok sebességkorlátját figyelembe kell venni, de az akkumulátorigényt az RGB szerint számoljuk!")
