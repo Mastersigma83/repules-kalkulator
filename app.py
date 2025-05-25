@@ -3,11 +3,17 @@ import math
 
 st.title("🚁 Repüléstervező kalkulátor")
 
-st.markdown("""
-Ez az alkalmazás segít kiszámolni, hogy adott terület, 
-repülési magasság és kamera paraméterek mellett teljesíthető-e a repülés 
-a rendelkezésre álló akkumulátorokkal.
-""")
+        st.markdown(
+            f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  
+"
+            f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  
+"
+            f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  
+"
+            f"**Becsült repülési idő:** {ido_szoveg}  
+"
+            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
+        )
 
 # Drónválasztás és kameramódok
 available_drones = {
