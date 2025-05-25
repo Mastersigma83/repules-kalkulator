@@ -22,7 +22,7 @@ available_drones = {
         "Multispektrális": {
             "fokusz_mm": 25.0,
             "szenzor_szelesseg_mm": 6.4,
-            "képszélesség_px": 2592,
+            "képszélesség_px": 1400,  # hatékony képszélesség módosítva a valósághű GSD-hez
             "min_írási_idő_s": 2.0,
             "korrekcio": 0.6
         }
@@ -35,7 +35,7 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 1.98
+GSD_KORREKCIOS_SZORZO = 2.1  # DJI-hez igazított korrekciós szorzó
 
 # GSD limit multispektrális alapján
 multi = available_drones[selected_drone_name]["Multispektrális"]
