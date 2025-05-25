@@ -97,16 +97,16 @@ if st.button("▶️ Számítás indítása"):
             perc = int(ido_min % 60)
             ido_szoveg += f" ({ora} óra {perc} perc)"
 
-        st.markdown(
+                st.markdown(
             f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  
 "
-            f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  
+            + f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  
 "
-            f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  
+            + f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  
 "
-            f"**Becsült repülési idő:** {ido_szoveg}  
+            + f"**Becsült repülési idő:** {ido_szoveg}  
 "
-            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
+            + f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
         )
 
     if kamera_mod == "RGB + multispektrális":
