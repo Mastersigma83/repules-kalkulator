@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("Repüléstervező kalkulátor")
+st.title("vRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -72,6 +72,7 @@ def szamol(kamera, gsd_cm_val, side_overlap_val):
     ido_ora_perc = f"{ora} óra {perc} perc" if ido_min >= 60 else ""
 
     return {
+        "repmag_m": repmag_m,
         "gsd_cm": gsd_cm_val,
         "side_overlap": side_overlap_val,
         "repmag_m": repmag_m,
