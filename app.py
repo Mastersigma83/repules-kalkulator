@@ -100,6 +100,9 @@ if st.button("▶️ Számítás indítása"):
         )
         st.markdown(szoveg)
 
+    if kamera_mod == "RGB + multispektrális":
+        st.warning("Ha a Multi kamerák is használatban vannak, azok eredményét kell elsődlegesen figyelembe venni!")
+
     if elerheto_akkuk >= fo_kamera['akku_igeny']:
         st.success(f"{elerheto_akkuk} akkumulátor elegendő ehhez a repüléshez.")
     else:
