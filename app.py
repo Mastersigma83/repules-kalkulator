@@ -35,6 +35,7 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
+GSD_KORREKCIOS_SZORZO = 1.98  # valósághű DJI-korrekció
 
 # GSD limit multispektrális alapján
 multi = available_drones[selected_drone_name]["Multispektrális"]
@@ -49,7 +50,7 @@ elerheto_akkuk = st.number_input("Elérhető 100%-os akkumulátorok (db)", min_v
 
 def szamol(kamera, gsd_cm_val, side_overlap_val):
     gsd_m = gsd_cm_val / 100
-    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"]) / kamera["szenzor_szelesseg_mm"]
+    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"]) / kamera["szenzor_szelesseg_mm"] / GSD_KORREKCIOS_SZORZO
     repmag_m = repmag_cm / 100
     kep_szelesseg_m = repmag_m * kamera["szenzor_szelesseg_mm"] / kamera["fokusz_mm"]
     savszel_m = kep_szelesseg_m * (1 - side_overlap_val / 100)
@@ -87,8 +88,6 @@ if st.button("▶️ Számítás indítása"):
 
     if kamera_mod == "RGB + multispektrális":
         eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct)))
-
-        # A multispektrális kamera legyen a szűk keresztmetszet
         fo_kamera = eredmenyek[-1][1]
     else:
         fo_kamera = eredmenyek[0][1]
@@ -121,24 +120,4 @@ if st.button("▶️ Számítás indítása"):
             st.info("Javasolt kompromisszum: oldalsó átfedés csökkentése (multi alapján)")
             st.markdown(f"""
             **Oldalsó átfedés:** {side_kompromisszum['side_overlap']}%  
-            **GSD marad:** {side_kompromisszum['gsd_cm']} cm/pixel  
-            **Repidő:** {side_kompromisszum['teljes_ido_min']:.1f} perc  
-            """)
-        else:
-            gsd_kompromisszum = None
-            gsd_cand = gsd_cm + 0.1
-            while gsd_cand < 100:
-                adat = szamol(multi, round(gsd_cand, 1), 60)
-                if adat["teljes_ido_min"] <= max_ido:
-                    gsd_kompromisszum = adat
-                    break
-                gsd_cand += 0.1
-
-            if gsd_kompromisszum:
-                st.info("Javasolt kompromisszum: GSD növelése 60% oldalsó átfedéssel (multi alapján)")
-                st.markdown(f"""
-                **GSD:** {gsd_kompromisszum['gsd_cm']:.1f} cm/pixel  
-                **Repidő:** {gsd_kompromisszum['teljes_ido_min']:.1f} perc  
-                """)
-            else:
-                st.error("Még GSD növeléssel sem teljesíthető a repülés ennyi akkuval a multispektrális kamerával.")
+            **GSD marad:** {side_kompromisszum['gsd_cm']} cm/
