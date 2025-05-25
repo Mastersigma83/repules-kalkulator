@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("🚁 Repüléstervező kalkulátor")
+st.title("mRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít kiszámolni, hogy adott terület, 
