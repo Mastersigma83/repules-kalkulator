@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("Repüléstervező kalkulátor")
+st.title("AGRON Repüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -30,9 +30,8 @@ available_drones = {
 # Konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 2.0  # DJI alapú korrekció
+GSD_KORREKCIOS_SZORZO = 2.0  # korrigált a DJI alapján
 DRON_MAX_SEBESSEG = 15.0
-MULTI_GSD_SZORZO = 1 / 0.56
 
 # Beviteli mezők
 selected_drone_name = st.selectbox("Drón kiválasztása", list(available_drones.keys()))
@@ -86,7 +85,7 @@ def szamol(kamera, gsd_cm_val, side_overlap_val, corrected=True):
         "akku_igeny": math.ceil(ido_min / AKKU_IDO_PERCBEN)
     }
 
-# Számítás
+# Számítás gomb
 if st.button("▶️ Számítás indítása"):
     rgb = available_drones[selected_drone_name]["RGB"]
     eredmeny_rgb = szamol(rgb, gsd_cm, side_overlap_pct)
@@ -105,21 +104,16 @@ if st.button("▶️ Számítás indítása"):
     if kamera_mod == "RGB + multispektrális":
         st.markdown("### Multispektrális kamera")
 
-        # A multispektrális GSD és max. repülési sebesség RGB repmagasságból
-        multi_gsd = gsd_cm * MULTI_GSD_SZORZO
-        shutter_speed = 1 / float(shutter_input)
-        gsd_m_multi = multi_gsd / 100
+        # Multispektrális GSD számítása RGB repülési magasságból
+        rgb_repmag = eredmeny_rgb['repmag_m']
+        gsd_multi_cm = (rgb_repmag * multi["szenzor_szelesseg_mm"]) / (multi["fokusz_mm"] * multi["képszélesség_px"]) * 100
 
-        vmax_blur = gsd_m_multi * MAX_PIXEL_ELMOZDULAS / shutter_speed
-        vmax_write = gsd_m_multi * multi["képszélesség_px"] / multi["min_írási_idő_s"]
-        vmax_mps_multi = min(vmax_blur, vmax_write) * multi["korrekcio"]
-        vmax_mps_multi = min(vmax_mps_multi, DRON_MAX_SEBESSEG)
+        # Multispektrális max sebesség: RGB vmax felével korlátozva
+        multi_vmax = eredmeny_rgb['vmax_mps'] / 2
 
-        st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {multi_gsd:.2f} cm/pixel")
-        st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {vmax_mps_multi:.2f} m/s")
-
-        if vmax_mps_multi < eredmeny_rgb["vmax_mps"]:
-            st.warning("Figyelem! A multispektrális kamera sebességkorlátja alacsonyabb, mint az RGB alapján számolt érték.")
+        st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_multi_cm:.2f} cm/pixel")
+        st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {multi_vmax:.2f} m/s")
+        st.warning("Ha a Multi kamerák is használatban vannak, azok sebességkorlátját figyelembe kell venni.")
 
     if elerheto_akkuk >= eredmeny_rgb['akku_igeny']:
         st.success(f"{elerheto_akkuk} akkumulátor elegendő ehhez a repüléshez.")
