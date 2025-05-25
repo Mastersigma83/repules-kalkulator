@@ -96,32 +96,7 @@ if st.button("▶️ Számítás indítása"):
             f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
             f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
             f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
-            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc" + (f" ({eredeti['teljes_ido_ora_perc']})" if eredeti['teljes_ido_ora_perc'] else "") + "  
-"
-            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
-        )
-        st.markdown(szoveg)
-
-    if kamera_mod == "RGB + multispektrális":
-        st.warning("Ha a Multi kamerák is használatban vannak, azok eredményét kell elsődlegesen figyelembe venni!")
-
-    if elerheto_akkuk >= fo_kamera['akku_igeny']:
-        st.success(f"{elerheto_akkuk} akkumulátor elegendő ehhez a repüléshez.")
-    else:
-        max_ido = elerheto_akkuk * AKKU_IDO_PERCBEN
-        st.warning(f"Nincs elég akku: max. {max_ido:.1f} perc repülési idő áll rendelkezésre.")
-
-        side_kompromisszum = None
-        for ovlp in range(int(side_overlap_pct)-1, 59, -1):
-            adat = szamol(multi, gsd_cm, ovlp)
-            if adat["teljes_ido_min"] <= max_ido:
-                side_kompromisszum = adat
-                break
-
-        if side_kompromisszum:
-            st.info("Javasolt kompromisszum: oldalsó átfedés csökkentése (multi alapján)")
-            szoveg = (
-                f"**Oldalsó átfedés:** {side_kompromisszum['side_overlap']}%  \n"
+            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc" + (f" ({eredeti['teljes_ido_ora_perc']})" if eredeti['teljes_ido_ora_perc'] else "") + "  \n"
                 f"**GSD marad:** {side_kompromisszum['gsd_cm']} cm/pixel  \n"
                 f"**Repidő:** {side_kompromisszum['teljes_ido_min']:.1f} perc"
             )
