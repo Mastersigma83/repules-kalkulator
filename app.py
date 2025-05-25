@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("bRepüléstervező kalkulátor")
+st.title("Repüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -33,7 +33,7 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 1.13
+GSD_KORREKCIOS_SZORZO = 0.60  # újrahangolt korrekciós szorzó a DJI logikához
 DRON_MAX_SEBESSEG = 15.0  # m/s
 
 multi = available_drones[selected_drone_name]["Multispektrális"]
@@ -48,7 +48,7 @@ elerheto_akkuk = st.number_input("Elérhető 100%-os akkumulátorok (db)", min_v
 
 def szamol(kamera, gsd_cm_val, side_overlap_val):
     gsd_m = gsd_cm_val / 100
-    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"]) / kamera["szenzor_szelesseg_mm"]  # korrigált
+    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"] * GSD_KORREKCIOS_SZORZO) / kamera["szenzor_szelesseg_mm"]
     repmag_m = repmag_cm / 100
     kep_szelesseg_m = repmag_m * kamera["szenzor_szelesseg_mm"] / kamera["fokusz_mm"]
     savszel_m = kep_szelesseg_m * (1 - side_overlap_val / 100)
