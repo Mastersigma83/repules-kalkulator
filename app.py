@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("Repüléstervező kalkulátor")
+st.title("bRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -48,7 +48,7 @@ elerheto_akkuk = st.number_input("Elérhető 100%-os akkumulátorok (db)", min_v
 
 def szamol(kamera, gsd_cm_val, side_overlap_val):
     gsd_m = gsd_cm_val / 100
-    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"] * GSD_KORREKCIOS_SZORZO) / kamera["szenzor_szelesseg_mm"]
+    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"]) / kamera["szenzor_szelesseg_mm"]  # korrigált
     repmag_m = repmag_cm / 100
     kep_szelesseg_m = repmag_m * kamera["szenzor_szelesseg_mm"] / kamera["fokusz_mm"]
     savszel_m = kep_szelesseg_m * (1 - side_overlap_val / 100)
