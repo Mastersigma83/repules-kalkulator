@@ -35,7 +35,7 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 1.98  # valósághű DJI-korrekció
+GSD_KORREKCIOS_SZORZO = 1.98
 
 # GSD limit multispektrális alapján
 multi = available_drones[selected_drone_name]["Multispektrális"]
@@ -81,10 +81,7 @@ if st.button("▶️ Számítás indítása"):
     rgb = available_drones[selected_drone_name]["RGB"]
     multi = available_drones[selected_drone_name]["Multispektrális"]
 
-    # Alapértelmezett: RGB kamera számítása
-    eredmenyek = [
-        ("RGB", szamol(rgb, gsd_cm, side_overlap_pct))
-    ]
+    eredmenyek = [("RGB", szamol(rgb, gsd_cm, side_overlap_pct))]
 
     if kamera_mod == "RGB + multispektrális":
         eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct)))
@@ -92,16 +89,16 @@ if st.button("▶️ Számítás indítása"):
     else:
         fo_kamera = eredmenyek[0][1]
 
-    # Eredmények kiírása
     for nev, eredeti in eredmenyek:
         st.subheader(f"Eredmények – {nev} kamera")
-        st.markdown(f"""
-        **Repülési magasság:** {eredeti['repmag_m']:.1f} m  
-        **Sávszélesség:** {eredeti['savszel_m']:.1f} m  
-        **Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  
-        **Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc  
-        **Szükséges akkumulátor:** {eredeti['akku_igeny']} db  
-        """)
+        szoveg = (
+            f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
+            f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
+            f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
+            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc  \n"
+            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
+        )
+        st.markdown(szoveg)
 
     if elerheto_akkuk >= fo_kamera['akku_igeny']:
         st.success(f"{elerheto_akkuk} akkumulátor elegendő ehhez a repüléshez.")
@@ -118,6 +115,28 @@ if st.button("▶️ Számítás indítása"):
 
         if side_kompromisszum:
             st.info("Javasolt kompromisszum: oldalsó átfedés csökkentése (multi alapján)")
-            st.markdown(f"""
-            **Oldalsó átfedés:** {side_kompromisszum['side_overlap']}%  
-            **GSD marad:** {side_kompromisszum['gsd_cm']} cm/
+            szoveg = (
+                f"**Oldalsó átfedés:** {side_kompromisszum['side_overlap']}%  \n"
+                f"**GSD marad:** {side_kompromisszum['gsd_cm']} cm/pixel  \n"
+                f"**Repidő:** {side_kompromisszum['teljes_ido_min']:.1f} perc"
+            )
+            st.markdown(szoveg)
+        else:
+            gsd_kompromisszum = None
+            gsd_cand = gsd_cm + 0.1
+            while gsd_cand < 100:
+                adat = szamol(multi, round(gsd_cand, 1), 60)
+                if adat["teljes_ido_min"] <= max_ido:
+                    gsd_kompromisszum = adat
+                    break
+                gsd_cand += 0.1
+
+            if gsd_kompromisszum:
+                st.info("Javasolt kompromisszum: GSD növelése 60% oldalsó átfedéssel (multi alapján)")
+                szoveg = (
+                    f"**GSD:** {gsd_kompromisszum['gsd_cm']:.1f} cm/pixel  \n"
+                    f"**Repidő:** {gsd_kompromisszum['teljes_ido_min']:.1f} perc"
+                )
+                st.markdown(szoveg)
+            else:
+                st.error("Még GSD növeléssel sem teljesíthető a repülés ennyi akkuval a multispektrális kamerával.")
