@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("xRepüléstervező kalkulátor")
+st.title("yRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -33,7 +33,7 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 2.06
+GSD_KORREKCIOS_SZORZO = 2.09
 DRON_MAX_SEBESSEG = 15.0  # m/s
 
 multi = available_drones[selected_drone_name]["Multispektrális"]
