@@ -92,7 +92,7 @@ if st.button("▶️ Számítás indítása"):
 
     for nev, eredeti in eredmenyek:
         st.subheader(f"Eredmények – {nev} kamera")
-        szoveg = (
+                szoveg = (
             f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
             f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
             f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
