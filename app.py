@@ -74,6 +74,7 @@ def szamol(kamera, gsd_cm_val, side_overlap_val):
         "savszel_m": savszel_m,
         "vmax_mps": vmax_mps,
         "teljes_ido_min": ido_min,
+        "teljes_ido_ora_perc": f"{int(ido_min // 60)} óra {int(ido_min % 60)} perc" if ido_min >= 60 else None,
         "akku_igeny": math.ceil(ido_min / AKKU_IDO_PERCBEN)
     }
 
@@ -95,7 +96,8 @@ if st.button("▶️ Számítás indítása"):
             f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
             f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
             f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
-            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc  \n"
+            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc" + (f" ({eredeti['teljes_ido_ora_perc']})" if eredeti['teljes_ido_ora_perc'] else "") + "  
+"
             f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
         )
         st.markdown(szoveg)
