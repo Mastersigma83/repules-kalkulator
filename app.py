@@ -3,17 +3,11 @@ import math
 
 st.title("🚁 Repüléstervező kalkulátor")
 
-        st.markdown(
-            f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  
-"
-            f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  
-"
-            f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  
-"
-            f"**Becsült repülési idő:** {ido_szoveg}  
-"
-            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
-        )
+st.markdown("""
+Ez az alkalmazás segít kiszámolni, hogy adott terület, 
+repülési magasság és kamera paraméterek mellett teljesíthető-e a repülés 
+a rendelkezésre álló akkumulátorokkal.
+""")
 
 # Drónválasztás és kameramódok
 available_drones = {
@@ -96,23 +90,12 @@ if st.button("▶️ Számítás indítása"):
 
     for nev, eredeti in eredmenyek:
         st.subheader(f"Eredmények – {nev} kamera")
-        ido_min = eredeti['teljes_ido_min']
-        ido_szoveg = f"{ido_min:.1f} perc"
-        if ido_min >= 60:
-            ora = int(ido_min // 60)
-            perc = int(ido_min % 60)
-            ido_szoveg += f" ({ora} óra {perc} perc)"
-
-                st.markdown(
-            f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  
-"
-            + f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  
-"
-            + f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  
-"
-            + f"**Becsült repülési idő:** {ido_szoveg}  
-"
-            + f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
+        st.markdown(
+            f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
+            f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
+            f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
+            f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc  \n"
+            f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
         )
 
     if kamera_mod == "RGB + multispektrális":
