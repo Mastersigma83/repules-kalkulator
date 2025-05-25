@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.title("nRepüléstervező kalkulátor")
+st.title("xRepüléstervező kalkulátor")
 
 st.markdown("""
 Ez az alkalmazás segít beállítani a drónodat agrárfelmérésekhez / térképezéshez. 
@@ -33,7 +33,7 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 2.1
+GSD_KORREKCIOS_SZORZO = 2.06
 DRON_MAX_SEBESSEG = 15.0  # m/s
 
 multi = available_drones[selected_drone_name]["Multispektrális"]
@@ -103,12 +103,11 @@ if st.button("▶️ Számítás indítása"):
 
         if nev == "RGB":
             st.markdown(
-                f"**Repülési magasság:** {eredeti['repmag_m']:.1f} m  \n"
-                f"**Sávszélesség:** {eredeti['savszel_m']:.1f} m  \n"
-                f"**Max. repülési sebesség:** {eredeti['vmax_mps']:.2f} m/s  \n"
-                f"**Becsült repülési idő:** {eredeti['teljes_ido_min']:.1f} perc" +
-                (f" ({eredeti['ido_ora_perc']})" if eredeti['ido_ora_perc'] else "") + "  \n"
-                f"**Szükséges akkumulátor:** {eredeti['akku_igeny']} db"
+                f"**Repülési magasság:** kb. {eredeti['repmag_m']:.1f} m  \n"
+                f"**Sávszélesség:** kb. {eredeti['savszel_m']:.1f} m  \n"
+                f"**Max. repülési sebesség:** kb. {eredeti['vmax_mps']:.2f} m/s  \n"
+                f"**Becsült repülési idő:** ~{eredeti['ido_ora_perc']}" if eredeti['ido_ora_perc'] else f"**Becsült repülési idő:** ~{eredeti['teljes_ido_min']:.1f} perc" + "  \n"
+                f"**Szükséges akkumulátor:** kb. {eredeti['akku_igeny']} db"
             )
         else:
             # RGB GSD-hez tartozó multispektrális GSD kiszámítása (helyesen, az RGB repmag alapján)
