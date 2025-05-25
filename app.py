@@ -33,7 +33,8 @@ kamera_mod = st.radio("Kameramód", ["Csak RGB", "RGB + multispektrális"])
 # Globális konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 0.60  # újrahangolt korrekciós szorzó a DJI logikához
+GSD_KORREKCIOS_SZORZO_RGB = 0.49  # Finomhangolt a DJI RGB értékeihez
+GSD_KORREKCIOS_SZORZO_MULTI = 0.60  # Korábban már megfelelő volt
 DRON_MAX_SEBESSEG = 15.0  # m/s
 
 multi = available_drones[selected_drone_name]["Multispektrális"]
@@ -46,9 +47,9 @@ front_overlap_pct = st.selectbox("Soron belüli átfedés (%)", options=list(ran
 terulet_ha = st.number_input("Felvételezni kívánt terület (hektár)", min_value=0.1, value=10.0, step=0.1, format="%.1f")
 elerheto_akkuk = st.number_input("Elérhető 100%-os akkumulátorok (db)", min_value=1, value=1, step=1)
 
-def szamol(kamera, gsd_cm_val, side_overlap_val):
+def szamol(kamera, gsd_cm_val, side_overlap_val, korrekcios_szorzo):
     gsd_m = gsd_cm_val / 100
-    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"] * GSD_KORREKCIOS_SZORZO) / kamera["szenzor_szelesseg_mm"]
+    repmag_cm = (gsd_cm_val * kamera["fokusz_mm"] * kamera["képszélesség_px"] * korrekcios_szorzo) / kamera["szenzor_szelesseg_mm"]
     repmag_m = repmag_cm / 100
     kep_szelesseg_m = repmag_m * kamera["szenzor_szelesseg_mm"] / kamera["fokusz_mm"]
     savszel_m = kep_szelesseg_m * (1 - side_overlap_val / 100)
@@ -87,10 +88,10 @@ if st.button("▶️ Számítás indítása"):
     rgb = available_drones[selected_drone_name]["RGB"]
     multi = available_drones[selected_drone_name]["Multispektrális"]
 
-    eredmenyek = [("RGB", szamol(rgb, gsd_cm, side_overlap_pct))]
+    eredmenyek = [("RGB", szamol(rgb, gsd_cm, side_overlap_pct, GSD_KORREKCIOS_SZORZO_RGB))]
 
     if kamera_mod == "RGB + multispektrális":
-        eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct)))
+        eredmenyek.append(("Multispektrális", szamol(multi, gsd_cm, side_overlap_pct, GSD_KORREKCIOS_SZORZO_MULTI)))
 
     fo_kamera = eredmenyek[0][1]  # mindig RGB az elsődleges
 
@@ -111,7 +112,7 @@ if st.button("▶️ Számítás indítása"):
         else:
             st.markdown("### Multispektrális kamera")
             repmag_m = fo_kamera['repmag_m']
-            gsd_multi_cm = (repmag_m * GSD_KORREKCIOS_SZORZO * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
+            gsd_multi_cm = (repmag_m * GSD_KORREKCIOS_SZORZO_MULTI * multi['szenzor_szelesseg_mm']) / (multi['fokusz_mm'] * multi['képszélesség_px']) * 100
             gsd_szoveg = f"{gsd_multi_cm:.2f} cm/pixel"
             st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {gsd_szoveg}")
             st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {eredeti['vmax_mps']:.2f} m/s")
