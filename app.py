@@ -30,9 +30,9 @@ available_drones = {
 # Konstansok
 MAX_PIXEL_ELMOZDULAS = 0.7
 AKKU_IDO_PERCBEN = 20
-GSD_KORREKCIOS_SZORZO = 2.0  # korrekció a DJI alapján
+GSD_KORREKCIOS_SZORZO = 2.0  # korrigált a DJI alapján
 DRON_MAX_SEBESSEG = 15.0
-MULTI_GSD_SZORZO = 1 / 0.56  # kb. 1.79
+MULTI_GSD_SZORZO = 1 / 0.56
 
 # Beviteli mezők
 selected_drone_name = st.selectbox("Drón kiválasztása", list(available_drones.keys()))
@@ -83,7 +83,8 @@ def szamol(kamera, gsd_cm_val, side_overlap_val, corrected=True):
         "vmax_mps": vmax_mps,
         "teljes_ido_min": ido_min,
         "ido_ora_perc": ido_ora_perc,
-        "akku_igeny": math.ceil(ido_min / AKKU_IDO_PERCBEN)
+        "akku_igeny": math.ceil(ido_min / AKKU_IDO_PERCBEN),
+        "teljes_ut_m": teljes_ut_m  # ezt a multi időhöz újrahasznosítjuk
     }
 
 # Számítás gomb
@@ -104,11 +105,35 @@ if st.button("▶️ Számítás indítása"):
 
     if kamera_mod == "RGB + multispektrális":
         st.markdown("### Multispektrális kamera")
+
+        # GSD átszámítás RGB-ből
         multi_gsd = gsd_cm * MULTI_GSD_SZORZO
-        multi_vmax = eredmeny_rgb['vmax_mps'] / 2
+
+        # Multispektrális max sebesség újra számolva a GSD alapján
+        shutter_speed = 1 / float(shutter_input)
+        gsd_m_multi = multi_gsd / 100
+        vmax_blur_multi = gsd_m_multi * MAX_PIXEL_ELMOZDULAS / shutter_speed
+        vmax_write_multi = gsd_m_multi * multi["képszélesség_px"] / multi["min_írási_idő_s"]
+        vmax_multi = min(vmax_blur_multi, vmax_write_multi) * multi["korrekcio"]
+        vmax_multi = min(vmax_multi, DRON_MAX_SEBESSEG)
+
+        # Multispektrális repülési idő RGB repmagasság alapján, multi kamerával
+        repmag_m = eredmeny_rgb["repmag_m"]
+        kep_szelesseg_m_multi = repmag_m * multi["szenzor_szelesseg_mm"] / multi["fokusz_mm"]
+        savszel_m_multi = kep_szelesseg_m_multi * (1 - side_overlap_pct / 100)
+
+        savok_szama = math.ceil(math.sqrt(terulet_ha * 10000) / savszel_m_multi)
+        savhossz_m = (terulet_ha * 10000) / (savok_szama * savszel_m_multi)
+        teljes_ut_m_multi = savok_szama * savhossz_m
+        ido_sec_multi = teljes_ut_m_multi / vmax_multi
+        ido_min_multi = ido_sec_multi / 60
+        ora_m = int(ido_min_multi // 60)
+        perc_m = int(ido_min_multi % 60)
+        ido_ora_perc_m = f"{ora_m} óra {perc_m} perc" if ido_min_multi >= 60 else f"{ido_min_multi:.1f} perc"
 
         st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {multi_gsd:.2f} cm/pixel")
-        st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {multi_vmax:.2f} m/s")
+        st.markdown(f"**Max. repülési sebesség (elmosódás nélkül):** {vmax_multi:.2f} m/s")
+        st.markdown(f"**Multi kamera teljes repülési idő (elméleti max sebességgel):** ~{ido_ora_perc_m}")
         st.warning("Ha a Multi kamerák is használatban vannak, azok sebességkorlátját figyelembe kell venni.")
 
     if elerheto_akkuk >= eredmeny_rgb['akku_igeny']:
