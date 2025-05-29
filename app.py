@@ -1,7 +1,7 @@
 import streamlit as st
 import math
 
-st.set_page_config(page_title="Drónos Repülési Kalkulátor V2.1", layout="centered")
+st.set_page_config(page_title="Drónos Repülési Kalkulátor V2.1.1", layout="centered")
 
 st.title("Drónos Repülési Kalkulátor – DJI Mavic 3 Multispectral")
 
