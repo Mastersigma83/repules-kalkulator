@@ -1,57 +1,77 @@
 import streamlit as st
 import math
 
-# DJI Mavic 3 Multispectral kamera adatok
-CAMERAS = {
-    "RGB": {
-        "fokusz_mm": 24.0,
-        "szenzor_szelesseg_mm": 17.3,
-        "képszélesség_px": 5280,
-        "min_expo_ido": 0.7,
-        "min_írási_idő": 0.7
-    },
-    "Multispektrális": {
-        "fokusz_mm": 25.0,
-        "szenzor_szelesseg_mm": 6.4,
-        "képszélesség_px": 1400,
-        "min_expo_ido": 1.5,
-        "min_írási_idő": 2.0
-    }
-}
+st.set_page_config(page_title="Drónos Repülési Kalkulátor V2.1", layout="centered")
 
-GSD_KORREKCIOS_SZORZO = 0.502  # DJI-hez igazított szorzó
+st.title("Drónos Repülési Kalkulátor – DJI Mavic 3 Multispectral")
 
-st.title("Repüléstervező kalkulátor (új verzió)")
+# --- Kamera adatok (fixen beégetve a DJI Mavic 3M alapján) ---
+RGB_SENSOR_WIDTH_MM = 13.2
+RGB_SENSOR_RESOLUTION = 5280
+RGB_FOCAL_LENGTH_MM = 10.3
+RGB_SHUTTER_WRITE_DELAY_S = 2.0  # 2 mp per kép (shutter + írás)
 
-# Drón és kameramód választása
-dron_tipus = st.selectbox("Drón típusa", ["DJI Mavic 3 Multispectral"])
-kamera_mod = st.radio("Kameramód", ["RGB", "RGB + Multispektrális"])
-fokusz_mod = st.radio("Melyik kamerára fókuszál a repülés?", ["RGB", "Multispektrális"])
+MULTI_SENSOR_WIDTH_MM = 5.36
+MULTI_SENSOR_RESOLUTION = 1280
+MULTI_FOCAL_LENGTH_MM = 5.74
+MULTI_SHUTTER_WRITE_DELAY_S = 2.0  # 2 mp per kép (shutter + írás)
 
-# Kamera kiválasztása a fókusz szerint
-fokusz_kamera = CAMERAS[fokusz_mod]
+KORREKCIO_RGB_MAGASSAG = 0.502
 
-# Beviteli mezők
-gsd_cm = st.number_input("Cél GSD (cm/pixel)", min_value=0.1, value=5.0, step=0.1)
-záridő_input = st.text_input("Záridő (1/x formátumban)", value="1000")
-oldal_atfedes = st.slider("Oldalirányú átfedés (%)", min_value=60, max_value=90, value=70)
-sor_atfedes = st.slider("Soron belüli átfedés (%)", min_value=60, max_value=90, value=80)
-terulet_ha = st.number_input("Térképezendő terület (hektár)", min_value=0.1, value=10.0, step=0.1)
-akkuk_szama = st.number_input("Elérhető akkumulátorok száma (100%)", min_value=1, value=1, step=1)
+# --- Bemenetek ---
+st.sidebar.header("Repülési beállítások")
 
-if st.button("Számítás indítása"):
+kamera_mod = st.sidebar.selectbox("Kamera mód:", ["RGB", "RGB + Multi"])
+fokusz_mod = st.sidebar.selectbox("Repülés fókusza:", ["RGB", "Multispektrális"])
+gsd_cm = st.sidebar.number_input("Cél GSD (cm/pixel):", min_value=0.1, max_value=100.0, value=5.0)
+shutter = st.sidebar.number_input("Záridő (1/x):", min_value=100, max_value=10000, value=1000)
+oldal_atfedes = st.sidebar.slider("Oldalirányú átfedés (%):", 0, 100, 70)
+soron_atfedes = st.sidebar.slider("Soron belüli átfedés (%):", 0, 100, 80)
+terulet_ha = st.sidebar.number_input("Térképezendő terület (ha):", min_value=0.1, max_value=500.0, value=10.0)
+akku_darab = st.sidebar.number_input("Akkumulátorok száma:", min_value=1, max_value=10, value=2)
+
+# --- Használt kamera ---
+kamera = "RGB" if kamera_mod == "RGB" or fokusz_mod == "RGB" else "Multi"
+
+def calc_gsd_altitude(sensor_width_mm, resolution_px, focal_length_mm, gsd_cm):
     gsd_m = gsd_cm / 100
-    shutter = 1 / float(záridő_input)
+    altitude = (gsd_m * focal_length_mm * resolution_px) / sensor_width_mm
+    return altitude * KORREKCIO_RGB_MAGASSAG
 
-    # Repülési magasság számítása korrekcióval
-    repmag_cm = (gsd_cm * fokusz_kamera["fokusz_mm"] * fokusz_kamera["képszélesség_px"]) / fokusz_kamera["szenzor_szelesseg_mm"]
-    repmag_cm *= GSD_KORREKCIOS_SZORZO
-    repmag_m = repmag_cm / 100
+def calc_max_speed(gsd_cm, shutter_speed):
+    gsd_m = gsd_cm / 100
+    return gsd_m * shutter_speed
 
-    # Kamera pixel elmozdulás alapú max sebesség (egyszerűsített modell)
-    MAX_PIXEL_ELMOZDULAS = 0.7
-    vmax_blur = gsd_m * MAX_PIXEL_ELMOZDULAS / shutter
+# --- Fókusz szerinti kamera paraméterek ---
+if kamera == "RGB":
+    altitude = calc_gsd_altitude(RGB_SENSOR_WIDTH_MM, RGB_SENSOR_RESOLUTION, RGB_FOCAL_LENGTH_MM, gsd_cm)
+    max_speed = calc_max_speed(gsd_cm, shutter)
+    delay = RGB_SHUTTER_WRITE_DELAY_S
+else:
+    altitude = calc_gsd_altitude(MULTI_SENSOR_WIDTH_MM, MULTI_SENSOR_RESOLUTION, MULTI_FOCAL_LENGTH_MM, gsd_cm)
+    max_speed = calc_max_speed(gsd_cm, shutter)
+    delay = MULTI_SHUTTER_WRITE_DELAY_S
 
-    st.subheader(f"Eredmények - {fokusz_mod} kamera alapján")
-    st.markdown(f"**Számított repülési magasság:** {repmag_m:.2f} méter")
-    st.markdown(f"**Elmosódás nélküli maximális repülési sebesség:** {vmax_blur:.2f} m/s")
+# --- Repülési idő kalkuláció ---
+# Egyszerűsített sorhossz/átfedés alapú becslés
+sorok_szama = math.ceil(math.sqrt((terulet_ha * 10000) / (altitude * (1 - oldal_atfedes / 100) * max_speed)))
+ido_per_sor = (terulet_ha * 10000) / (max_speed * sorok_szama)
+repulesi_ido_min = (ido_per_sor * sorok_szama) / 60
+
+# --- Eredmények ---
+st.subheader(f"Eredmények ({kamera} fókuszú repülés)")
+
+st.markdown(f"**Számított repülési magasság:** {altitude:.1f} m")
+st.markdown(f"**Maximális repülési sebesség:** {max_speed:.2f} m/s")
+st.markdown(f"**Becsült repülési idő:** {repulesi_ido_min:.1f} perc")
+st.markdown(f"**Szükséges akkumulátor:** ~{math.ceil(repulesi_ido_min / 30)} db")
+
+# --- Multi kamera esetén további infók ---
+if kamera_mod == "RGB + Multi":
+    st.subheader("Multispektrális kamera adatok (kiegészítő információ)")
+
+    multi_gsd = gsd_cm / 0.56
+    multi_max_speed = calc_max_speed(multi_gsd, shutter)
+
+    st.markdown(f"**A megadott RGB GSD-hez tartozó multispektrális GSD:** {multi_gsd:.2f} cm/pixel")
+    st.markdown(f"**Ajánlott maximális repülési sebesség multispektrális kamerához:** {multi_max_speed:.2f} m/s")
