@@ -3,7 +3,7 @@ import streamlit as st
 # Kamera specifikációk
 CAMERA_SPECS = {
     "RGB": {
-        "focal_length_mm": 24.0,
+        "focal_length_mm": 10.26,
         "sensor_width_mm": 17.3,
         "image_width_px": 5280,
         "min_shutter_s": 1/1000,
