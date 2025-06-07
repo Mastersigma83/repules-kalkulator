@@ -31,7 +31,7 @@ st.title("DJI Mavic 3M Repülési Magasság Kalkulátor")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
-gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
+gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=20.0, value=3.0, step=0.1)
 
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
