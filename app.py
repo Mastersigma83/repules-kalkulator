@@ -1,18 +1,16 @@
 import streamlit as st
-#250607_1646
-# --- CSS: kurzor eltüntetése a selectbox mezőkből ---
+
+# --- CSS: szövegkurzor eltüntetése selectbox mezőkből ---
 st.markdown("""
     <style>
-    /* Szövegkurzor eltüntetése a legördülőből */
     div[data-baseweb="select"] input {
         caret-color: transparent !important;
-        pointer-events: none;
-        user-select: none;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Kameraadatok ---
+# Kameraadatok
+#1653
 CAMERA_SPECS = {
     "RGB": {
         "focal_length_mm": 24.5,
@@ -27,10 +25,10 @@ CAMERA_SPECS = {
     }
 }
 
-# --- Repülési magasság számítása ---
+# Repülési magasság számítása
 def calculate_flight_altitude(gsd_cm_px, camera_type):
     specs = CAMERA_SPECS[camera_type]
-    gsd_mm_px = gsd_cm_px * 10  # cm/px → mm/px
+    gsd_mm_px = gsd_cm_px * 10
 
     if camera_type == "RGB":
         altitude_mm = (gsd_mm_px * specs["sensor_width_mm"] * specs["image_width_px"]) / specs["focal_length_mm"]
@@ -40,13 +38,22 @@ def calculate_flight_altitude(gsd_cm_px, camera_type):
 
     return altitude_mm / 1000  # mm → m
 
-# --- Streamlit UI ---
-st.title("DJI Mavic 3M Repülési Magasság Kalkulátor")
+# Maximális repülési sebesség számítása (m/s), korlátozva 15 m/s-ra
+def calculate_max_speed(gsd_cm_px, shutter_value):
+    raw_speed = (gsd_cm_px * shutter_value) / 100
+    return min(raw_speed, 15.0)
+
+# Streamlit UI
+st.title("DJI Mavic 3M Repülési Kalkulátor")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
 gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
+shutter_input = st.number_input("Add meg a záridőt (pl. 1/800 esetén: 800):", min_value=100, max_value=8000, value=800, step=100)
 
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
+    max_speed = calculate_max_speed(gsd_input, shutter_input)
+
     st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
+    st.info(f"A maximális repülési sebesség: {max_speed:.1f} m/s (záridő: 1/{shutter_input})")
