@@ -10,18 +10,19 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Kameraadatok
-#1653
 CAMERA_SPECS = {
     "RGB": {
         "focal_length_mm": 24.5,
         "sensor_width_mm": 17.3,
-        "image_width_px": 5280
+        "image_width_px": 5280,
+        "capture_interval_sec": 1
     },
     "Multispektrális": {
         "focal_length_mm": 4.7,
         "sensor_width_mm": 6.4,
         "image_width_px": 2592,
-        "correction_factor": 0.877
+        "correction_factor": 0.877,
+        "capture_interval_sec": 2
     }
 }
 
@@ -38,10 +39,12 @@ def calculate_flight_altitude(gsd_cm_px, camera_type):
 
     return altitude_mm / 1000  # mm → m
 
-# Maximális repülési sebesség számítása (m/s), korlátozva 15 m/s-ra
-def calculate_max_speed(gsd_cm_px, shutter_value):
-    raw_speed = (gsd_cm_px * shutter_value) / 100
-    return min(raw_speed, 15.0)
+# Maximális sebesség számítása fényviszonyok és kamerakorlát szerint
+def calculate_max_speed(gsd_cm_px, shutter_value, camera_type):
+    shutter_limited = (gsd_cm_px * shutter_value) / 100
+    camera_specs = CAMERA_SPECS[camera_type]
+    hardware_limited = (gsd_cm_px * camera_specs["image_width_px"]) / 100 / camera_specs["capture_interval_sec"]
+    return min(shutter_limited, hardware_limited, 15.0)
 
 # Streamlit UI
 st.title("DJI Mavic 3M Repülési Kalkulátor")
@@ -50,10 +53,13 @@ drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
 gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
 shutter_input = st.number_input("Add meg a záridőt (pl. 1/800 esetén: 800):", min_value=100, max_value=8000, value=800, step=100)
+front_overlap = st.number_input("Soron belüli átfedés (%)", min_value=0, max_value=100, value=70, step=5)
+side_overlap = st.number_input("Sorok közötti átfedés (%)", min_value=0, max_value=100, value=20, step=5)
 
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
-    max_speed = calculate_max_speed(gsd_input, shutter_input)
+    max_speed = calculate_max_speed(gsd_input, shutter_input, priority)
 
     st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
-    st.info(f"A maximális repülési sebesség: {max_speed:.1f} m/s (záridő: 1/{shutter_input})")
+    st.info(f"Maximális repülési sebesség: {max_speed:.1f} m/s (záridő + kamera korlát alapján)")
+    st.write(f"Átfedési beállítások: Soron belüli: {front_overlap}%, Sorok között: {side_overlap}%")
