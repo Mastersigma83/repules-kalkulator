@@ -1,40 +1,44 @@
-# Mavic 3 Multispectral Camera Parameters (Updated)
+import streamlit as st
 
-# RGB Camera
-RGB_FOCAL_LENGTH_MM = 24.5
-RGB_IMAGE_WIDTH_PX = 5280
-RGB_SENSOR_WIDTH_MM = 17.3
+# Kamera paraméterek (mm-ben vagy pixelben)
+CAMERA_PARAMS = {
+    "DJI Mavic 3M": {
+        "RGB": {
+            "focal_length": 24.5,  # mm
+            "sensor_width": 17.3,  # mm
+            "image_width": 5280  # pixel
+        },
+        "Multispektrális": {
+            "focal_length": 4.7,  # mm
+            "sensor_width": 6.4,  # mm
+            "image_width": 2592,  # pixel
+            "correction_factor": 0.877
+        }
+    }
+}
 
-# Multispectral Camera
-MULTI_FOCAL_LENGTH_MM = 4.7
-MULTI_IMAGE_WIDTH_PX = 2592  # Updated from 1600 to 2592
-MULTI_SENSOR_WIDTH_MM = 6.4
+def calculate_altitude(gsd_cm_per_px, focal_length, sensor_width, image_width, correction_factor=1.0):
+    gsd_mm_per_px = gsd_cm_per_px * 10
+    altitude_mm = (gsd_mm_per_px * sensor_width * image_width) / focal_length
+    return (altitude_mm / 1000) * correction_factor
 
-# Function to calculate GSD
+st.title("Repülési magasság kalkulátor")
 
-def calculate_gsd(flight_altitude_m, focal_length_mm, sensor_width_mm, image_width_px):
-    # Convert altitude from meters to millimeters
-    flight_altitude_mm = flight_altitude_m * 1000
-    gsd_mm_per_px = (flight_altitude_mm * sensor_width_mm) / (focal_length_mm * image_width_px)
-    gsd_cm_per_px = gsd_mm_per_px / 10
-    return gsd_cm_per_px
+# 1. Drón kiválasztása
+drone_model = st.selectbox("Válassz drónt:", ["DJI Mavic 3M"])
 
-# Example calculation at 90 meters
-flight_altitude_m = 90
+# 2. Prioritás kiválasztása
+priority_camera = st.radio("Melyik kamerára szeretnél kalkulálni?", ["RGB", "Multispektrális"])
 
-rgb_gsd = calculate_gsd(
-    flight_altitude_m,
-    RGB_FOCAL_LENGTH_MM,
-    RGB_SENSOR_WIDTH_MM,
-    RGB_IMAGE_WIDTH_PX
-)
+# 3. Cél GSD beírása (cm/pixel)
+gsd_input = st.number_input("Add meg a cél GSD-t (cm/pixel):", min_value=0.1, step=0.1)
 
-multi_gsd = calculate_gsd(
-    flight_altitude_m,
-    MULTI_FOCAL_LENGTH_MM,
-    MULTI_SENSOR_WIDTH_MM,
-    MULTI_IMAGE_WIDTH_PX
-)
+if st.button("Számítás indítása"):
+    params = CAMERA_PARAMS[drone_model][priority_camera]
+    focal = params["focal_length"]
+    sensor = params["sensor_width"]
+    width = params["image_width"]
+    correction = params.get("correction_factor", 1.0)
 
-print(f"RGB camera GSD at {flight_altitude_m}m: {rgb_gsd:.2f} cm/px")
-print(f"Multispectral camera GSD at {flight_altitude_m}m: {multi_gsd:.2f} cm/px")
+    altitude_m = calculate_altitude(gsd_input, focal, sensor, width, correction)
+    st.success(f"A(z) {priority_camera} kamera számított repülési magassága: {altitude_m:.1f} m")
