@@ -1,5 +1,4 @@
 import streamlit as st
-from math import ceil
 
 # Kameraadatok
 CAMERA_SPECS = {
@@ -19,50 +18,62 @@ CAMERA_SPECS = {
 # Repülési magasság számítása
 def calculate_flight_altitude(gsd_cm_px, camera_type):
     specs = CAMERA_SPECS[camera_type]
-    gsd_mm_px = gsd_cm_px * 10
+    gsd_mm_px = gsd_cm_px * 10  # cm/px → mm/px
+
     if camera_type == "RGB":
         altitude_mm = (gsd_mm_px * specs["sensor_width_mm"] * specs["image_width_px"]) / specs["focal_length_mm"]
     else:
         altitude_mm = (gsd_mm_px * specs["focal_length_mm"] * specs["image_width_px"]) / specs["sensor_width_mm"]
         altitude_mm /= specs.get("correction_factor", 1.0)
-    return altitude_mm / 1000
 
-# Max sebesség számítása
+    return altitude_mm / 1000  # mm → m
+
+# Maximális sebesség számítása
 def calculate_max_speed(gsd_cm_px, shutter_speed, camera_type):
-    raw_speed = (shutter_speed * gsd_cm_px) / 100
-    limited_speed = min(raw_speed, 15)
-    interval = 1 if camera_type == "RGB" else 2
-    speed = limited_speed * interval
-    return speed * 0.9  # 10% biztonság
+    base_speed = (gsd_cm_px * shutter_speed) / 100
+    base_speed *= 0.9  # biztonsági tartalék
+    max_limit = 15
 
-# Becsült repülési idő (percben)
-def estimate_flight_time(area_ha, speed_m_s, sidelap_pct, frontlap_pct, camera_type, gsd_cm_px):
-    specs = CAMERA_SPECS[camera_type]
-    coverage_width = specs["image_width_px"] * (1 - frontlap_pct / 100) * gsd_cm_px / 100
-    coverage_length = speed_m_s * (1 - sidelap_pct / 100)
-    coverage_area_per_sec = coverage_width * coverage_length
-    total_area_m2 = area_ha * 10000
-    return total_area_m2 / coverage_area_per_sec / 60
+    # sebességkorlát a kamera alapján
+    if camera_type == "RGB":
+        max_allowed = 1 * base_speed
+    else:
+        max_allowed = 0.5 * base_speed
+
+    return min(base_speed, max_allowed, max_limit)
+
+# Becsült idő számítása finomított modell alapján
+def estimate_flight_time(area_ha, altitude_m, speed_mps):
+    if altitude_m <= 50:
+        area_per_min = 0.35 * speed_mps
+    elif altitude_m <= 80:
+        area_per_min = 0.55 * speed_mps
+    elif altitude_m <= 100:
+        area_per_min = 0.70 * speed_mps
+    else:
+        area_per_min = 0.85 * speed_mps
+
+    total_minutes = area_ha / area_per_min
+    return total_minutes
 
 # Streamlit UI
 st.title("AGRON Repüléstervezés")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
-gsd_cm_px = st.number_input("Kívánt GSD (cm/px):", min_value=0.1, max_value=10.0, value=3.0)
-shutter_speed = st.number_input("Záridő érték (pl. 1/800 → 800):", min_value=100, max_value=5000, value=800)
-sidelap = st.number_input("Soron belüli átfedés (%):", min_value=0, max_value=100, value=80)
-frontlap = st.number_input("Sorok közötti átfedés (%):", min_value=0, max_value=100, value=70)
-area_ha = st.number_input("Felmérendő terület (hektár):", min_value=0.1, max_value=1000.0, value=10.0)
+gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
+shutter_speed = st.number_input("Add meg a záridőt (pl. 800 az 1/800-hoz):", min_value=100, max_value=2000, value=800, step=50)
+overlap_inline = st.number_input("Soron belüli átfedés (%):", min_value=0, max_value=100, value=80, step=5)
+overlap_between = st.number_input("Sorok közötti átfedés (%):", min_value=0, max_value=100, value=70, step=5)
+area_input = st.number_input("Add meg a felmérendő területet (hektár):", min_value=0.1, max_value=1000.0, value=10.0, step=0.1)
 
 if st.button("Számítás indítása"):
-    altitude = calculate_flight_altitude(gsd_cm_px, priority)
-    max_speed = calculate_max_speed(gsd_cm_px, shutter_speed, priority)
-    est_time_min = estimate_flight_time(area_ha, max_speed, sidelap, frontlap, priority, gsd_cm_px)
-    battery_time = 20  # perc
-    batteries = ceil(est_time_min / battery_time)
+    altitude = calculate_flight_altitude(gsd_input, priority)
+    speed = calculate_max_speed(gsd_input, shutter_speed, priority)
+    time_minutes = estimate_flight_time(area_input, altitude, speed)
+    battery_count = (time_minutes / 20)
 
-    st.success(f"Repülési magasság: {altitude:.1f} m ({priority} kamera)")
-    st.info(f"Maximális sebesség: {max_speed:.2f} m/s")
-    st.info(f"Becsült repülési idő: {est_time_min:.1f} perc")
-    st.warning(f"Szükséges akkumulátorok: {batteries} db (20 perc repülés/akku)")
+    st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter")
+    st.info(f"Becsült maximális repülési sebesség: {speed:.2f} m/s")
+    st.warning(f"Becsült repülési idő: {time_minutes:.1f} perc")
+    st.error(f"Szükséges akkumulátorok száma (20 perc/akku): {battery_count:.1f}")
