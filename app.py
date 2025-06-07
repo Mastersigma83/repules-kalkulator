@@ -1,6 +1,6 @@
 import streamlit as st
 
-# Kameraadatok
+# Kameraadatok (végleges értékekkel)
 CAMERA_SPECS = {
     "RGB": {
         "focal_length_mm": 24.5,
@@ -15,18 +15,19 @@ CAMERA_SPECS = {
     }
 }
 
+# Repülési magasság számítása (végleges képlettel és korrekcióval)
 def calculate_flight_altitude(gsd_cm_px, camera_type):
     specs = CAMERA_SPECS[camera_type]
     gsd_mm_px = gsd_cm_px * 10  # átváltás mm/px-re
-    base_altitude = (gsd_mm_px * specs["focal_length_mm"] * specs["image_width_px"]) / specs["sensor_width_mm"]
+    altitude_mm = (gsd_mm_px * specs["focal_length_mm"] * specs["image_width_px"]) / specs["sensor_width_mm"]
     
     if camera_type == "Multispektrális":
-        base_altitude *= specs.get("correction_factor", 1.0)
+        altitude_mm /= specs.get("correction_factor", 1.0)
 
-    return base_altitude / 1000  # átváltás méterre
+    return altitude_mm / 1000  # méterre váltás
 
-# Streamlit UI
-st.title("DJI Mavic 3M Repülési Kalkulátor")
+# Streamlit felület
+st.title("DJI Mavic 3M Repülési Magasság Kalkulátor")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
