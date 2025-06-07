@@ -5,18 +5,21 @@ CAMERA_SPECS = {
     "RGB": {
         "focal_length_mm": 24.5,
         "sensor_width_mm": 17.3,
-        "image_width_px": 5280
+        "image_width_px": 5280,
+        "min_capture_interval_s": 1.0  # minimum 1 mp két kép között
     },
     "Multispektrális": {
         "focal_length_mm": 4.7,
         "sensor_width_mm": 6.4,
         "image_width_px": 2592,
-        "correction_factor": 0.877
+        "correction_factor": 0.877,
+        "min_capture_interval_s": 2.0  # minimum 2 mp két kép között
     }
 }
 
 MAX_PIXEL_ELMOZDULAS = 0.7  # pixel elmozdulás, ami még elfogadható
 DRONE_MAX_SPEED = 15.0      # maximális repülési sebesség m/s
+SAFETY_FACTOR = 0.9         # 10% biztonsági ráhagyás
 
 # Repülési magasság számítása
 def calculate_flight_altitude(gsd_cm_px, camera_type):
@@ -24,21 +27,28 @@ def calculate_flight_altitude(gsd_cm_px, camera_type):
     gsd_mm_px = gsd_cm_px * 10  # cm/px → mm/px
 
     if camera_type == "RGB":
-        # RGB kamera képlete
         altitude_mm = (gsd_mm_px * specs["sensor_width_mm"] * specs["image_width_px"]) / specs["focal_length_mm"]
     else:
-        # Multi kamera képlete korrekcióval
         altitude_mm = (gsd_mm_px * specs["focal_length_mm"] * specs["image_width_px"]) / specs["sensor_width_mm"]
         altitude_mm /= specs.get("correction_factor", 1.0)
 
     return altitude_mm / 1000  # mm → m
 
-# Maximális sebesség számítása a GSD és záridő alapján
-def calculate_max_speed(gsd_cm_px, shutter_speed_denominator):
+# Maximális sebesség számítása a GSD, záridő és a képírási idő alapján
+def calculate_max_speed(gsd_cm_px, shutter_speed_denominator, camera_type):
+    specs = CAMERA_SPECS[camera_type]
     gsd_m = gsd_cm_px / 100  # cm/px → m/px
     shutter_speed = 1 / shutter_speed_denominator  # pl. 1/800 -> 0.00125 s
     vmax_blur = gsd_m * MAX_PIXEL_ELMOZDULAS / shutter_speed
-    vmax = min(vmax_blur, DRONE_MAX_SPEED)
+
+    # max sebesség az írási idő miatt (képkészítési interval)
+    vmax_write = gsd_m / specs["min_capture_interval_s"]
+
+    vmax = min(vmax_blur, vmax_write, DRONE_MAX_SPEED)
+
+    # 10% biztonsági ráhagyás
+    vmax *= SAFETY_FACTOR
+
     return vmax
 
 # Streamlit UI
@@ -54,11 +64,10 @@ planned_flight_time = st.number_input("Tervezett repülési idő (perc):", min_v
 
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
-    max_speed = calculate_max_speed(gsd_input, shutter_speed_den)
+    max_speed = calculate_max_speed(gsd_input, shutter_speed_den, priority)
     st.success(f"A kívánt {gsd_input:.1f} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
-    st.info(f"Maximális repülési sebesség (záridő figyelembevételével): {max_speed:.2f} m/s")
+    st.info(f"Maximális repülési sebesség (záridő és írási idő figyelembevételével): {max_speed:.2f} m/s")
 
-    # Akkumulátor kalkuláció
     battery_minutes = 20
     akku_igeny = int(planned_flight_time / battery_minutes + 0.999)
     st.info(f"Szükséges akkumulátorok száma (20 perc/akku): {akku_igeny} db")
