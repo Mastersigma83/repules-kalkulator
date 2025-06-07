@@ -34,12 +34,12 @@ def calculate_flight_altitude(gsd_cm_px, camera_type):
 st.title("AGRON Repüléstervezés")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
-priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
+priority = st.selectbox("Melyik kamerát vegyük alapul?", ["RGB", "Multispektrális"])
 gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
 shutter_speed = st.number_input("Add meg a záridő nevezőjét (pl. 800 = 1/800):", min_value=100, value=800)
 front_overlap = st.number_input("Soron belüli átfedés (%):", min_value=0, max_value=100, value=80, step=1)
 side_overlap = st.number_input("Sorok közötti átfedés (%):", min_value=0, max_value=100, value=70, step=1)
-planned_flight_time = st.number_input("Tervezett repülési idő (perc):", min_value=1.0, value=20.0, step=1.0)
+planned_flight_time = st.number_input("KOntrollerből kiolvasott repülési idő (perc):", min_value=1.0, value=20.0, step=1.0)
 
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
