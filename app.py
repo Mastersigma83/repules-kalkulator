@@ -1,5 +1,17 @@
 import streamlit as st
 
+# CSS: eltüntetjük a szövegkurzort a legördülő mezőkből
+st.markdown(
+    """
+    <style>
+    div[data-baseweb="select"] input {
+        caret-color: transparent !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Kameraadatok
 CAMERA_SPECS = {
     "RGB": {
