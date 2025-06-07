@@ -1,18 +1,18 @@
 import streamlit as st
-
-# CSS: eltüntetjük a szövegkurzort a legördülő mezőkből
-st.markdown(
-    """
+#250607_1646
+# --- CSS: kurzor eltüntetése a selectbox mezőkből ---
+st.markdown("""
     <style>
+    /* Szövegkurzor eltüntetése a legördülőből */
     div[data-baseweb="select"] input {
         caret-color: transparent !important;
+        pointer-events: none;
+        user-select: none;
     }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-# Kameraadatok
+# --- Kameraadatok ---
 CAMERA_SPECS = {
     "RGB": {
         "focal_length_mm": 24.5,
@@ -27,22 +27,20 @@ CAMERA_SPECS = {
     }
 }
 
-# Repülési magasság számítása
+# --- Repülési magasság számítása ---
 def calculate_flight_altitude(gsd_cm_px, camera_type):
     specs = CAMERA_SPECS[camera_type]
     gsd_mm_px = gsd_cm_px * 10  # cm/px → mm/px
 
     if camera_type == "RGB":
-        # Külön képlet az RGB kamerához
         altitude_mm = (gsd_mm_px * specs["sensor_width_mm"] * specs["image_width_px"]) / specs["focal_length_mm"]
     else:
-        # Eredeti képlet multispektrálishoz, korrekcióval
         altitude_mm = (gsd_mm_px * specs["focal_length_mm"] * specs["image_width_px"]) / specs["sensor_width_mm"]
         altitude_mm /= specs.get("correction_factor", 1.0)
 
     return altitude_mm / 1000  # mm → m
 
-# Streamlit felület
+# --- Streamlit UI ---
 st.title("DJI Mavic 3M Repülési Magasság Kalkulátor")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
