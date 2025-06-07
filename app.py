@@ -1,4 +1,5 @@
 import streamlit as st
+import math
 
 # Kameraadatok
 CAMERA_SPECS = {
@@ -40,7 +41,7 @@ def calculate_gsd_from_altitude(altitude_m, camera_type):
     return gsd_mm_px / 10  # mm/px → cm/px
 
 # Streamlit UI
-st.title("DJI Mavic 3M Repülési Magasság Kalkulátor")
+st.title("AGRON Repüléstervezés")
 
 drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
@@ -50,6 +51,7 @@ if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
     st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
     
+    # Ha a prioritás multispektrális, akkor mutassuk meg az RGB GSD-t ugyanazon magasságon
     if priority == "Multispektrális":
         rgb_gsd = calculate_gsd_from_altitude(altitude, "RGB")
         st.info(f"Ugyanezen a repülési magasságon az RGB kamera GSD-je kb.: {rgb_gsd:.2f} cm/px")
