@@ -20,6 +20,7 @@ CAMERA_SPECS = {
 MAX_PIXEL_ELMOZDULAS = 0.7
 DRONE_MAX_SPEED = 15.0  # m/s
 SAFETY_FACTOR = 0.9     # 10% biztonsági ráhagyás
+AKKU_IDO_PERCBEN = 20   # perc/akku
 
 def calculate_flight_altitude(gsd_cm_px, camera_type):
     specs = CAMERA_SPECS[camera_type]
@@ -55,10 +56,15 @@ shutter_input = st.number_input("Add meg a záridő nevezőjét (pl. 800 az 1/80
 side_overlap_pct = st.number_input("Add meg az oldalirányú átfedést (%):", min_value=0, max_value=100, value=70, step=1)
 front_overlap_pct = st.number_input("Add meg a soron belüli átfedést (%):", min_value=0, max_value=100, value=80, step=1)
 terulet_ha = st.number_input("Add meg a felmérni kívánt területet (hektár):", min_value=0.1, value=10.0, step=0.1, format="%.1f")
+tervezett_ido = st.number_input("Tervezett repülési idő (kontrollerből, percben):", min_value=1, value=20, step=1)
 
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
     max_speed = calculate_max_speed(gsd_input, shutter_input, priority)
 
+    # Akkumulátor szükséglet számítása a tervezett idő alapján
+    akku_szam = int((tervezett_ido + AKKU_IDO_PERCBEN - 1) // AKKU_IDO_PERCBEN)  # felfelé kerekítve
+
     st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
     st.info(f"Maximális repülési sebesség (záridő és írási idő figyelembevételével): {max_speed:.2f} m/s")
+    st.info(f"Szükséges akkumulátorok száma (tervezett repülési idő alapján): {akku_szam} db")
