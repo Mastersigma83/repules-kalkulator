@@ -47,11 +47,18 @@ drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
 priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
 gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
 
+shutter_input = st.text_input("Add meg a záridő nevezőjét (pl. 800 az 1/800-hoz):", value="800")
+
+side_overlap_pct = st.slider("Sorok közötti átfedés (%)", 50, 90, 70)
+front_overlap_pct = st.slider("Soron belüli átfedés (%)", 50, 90, 80)
+
+area_ha = st.number_input("Add meg a felmérni kívánt területet (hektár):", min_value=0.1, value=10.0, step=0.1, format="%.1f")
+
 if st.button("Számítás indítása"):
     altitude = calculate_flight_altitude(gsd_input, priority)
     st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
-    
-    # Ha a prioritás multispektrális, akkor mutassuk meg az RGB GSD-t ugyanazon magasságon
+
+    # Multi prioritás esetén mutassuk meg az RGB GSD-t ugyanazon a magasságon
     if priority == "Multispektrális":
         rgb_gsd = calculate_gsd_from_altitude(altitude, "RGB")
         st.info(f"Ugyanezen a repülési magasságon az RGB kamera GSD-je kb.: {rgb_gsd:.2f} cm/px")
