@@ -1,44 +1,50 @@
 import streamlit as st
 
-# Kamera paraméterek (mm-ben vagy pixelben)
+# Kamera paraméterek
 CAMERA_PARAMS = {
     "DJI Mavic 3M": {
         "RGB": {
             "focal_length": 24.5,  # mm
-            "sensor_width": 17.3,  # mm
-            "image_width": 5280  # pixel
+            "image_width_px": 5280,
+            "sensor_width_mm": 17.3,
         },
         "Multispektrális": {
             "focal_length": 4.7,  # mm
-            "sensor_width": 6.4,  # mm
-            "image_width": 2592,  # pixel
-            "correction_factor": 0.877
-        }
+            "image_width_px": 2592,
+            "sensor_width_mm": 6.4,
+            "correction": 0.877,  # csak multispektrálisra
+        },
     }
 }
 
-def calculate_altitude(gsd_cm_per_px, focal_length, sensor_width, image_width, correction_factor=1.0):
+# GSD -> repülési magasság képlete
+
+def calculate_flight_altitude(gsd_cm_per_px, focal_length_mm, image_width_px, sensor_width_mm, correction_factor=1.0):
     gsd_mm_per_px = gsd_cm_per_px * 10
-    altitude_mm = (gsd_mm_per_px * sensor_width * image_width) / focal_length
-    return (altitude_mm / 1000) * correction_factor
+    height_mm = (gsd_mm_per_px * sensor_width_mm * image_width_px) / focal_length_mm
+    height_mm *= correction_factor
+    return height_mm / 1000  # méterben
 
-st.title("Repülési magasság kalkulátor")
+# Streamlit UI
+st.title("Drón Repülési Magasság Kalkulátor")
 
-# 1. Drón kiválasztása
-drone_model = st.selectbox("Válassz drónt:", ["DJI Mavic 3M"])
+selected_drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
+camera_priority = st.radio("Melyik kamerára optimalizálsz?", ["RGB", "Multispektrális"])
+gsd_input = st.number_input("Cél GSD (cm/pixel):", min_value=0.1, max_value=100.0, step=0.1)
 
-# 2. Prioritás kiválasztása
-priority_camera = st.radio("Melyik kamerára szeretnél kalkulálni?", ["RGB", "Multispektrális"])
+if st.button("Számítás"):
+    camera_params = CAMERA_PARAMS[selected_drone][camera_priority]
+    focal_length = camera_params["focal_length"]
+    image_width_px = camera_params["image_width_px"]
+    sensor_width_mm = camera_params["sensor_width_mm"]
+    correction = camera_params.get("correction", 1.0)
 
-# 3. Cél GSD beírása (cm/pixel)
-gsd_input = st.number_input("Add meg a cél GSD-t (cm/pixel):", min_value=0.1, step=0.1)
+    altitude = calculate_flight_altitude(
+        gsd_input,
+        focal_length,
+        image_width_px,
+        sensor_width_mm,
+        correction,
+    )
 
-if st.button("Számítás indítása"):
-    params = CAMERA_PARAMS[drone_model][priority_camera]
-    focal = params["focal_length"]
-    sensor = params["sensor_width"]
-    width = params["image_width"]
-    correction = params.get("correction_factor", 1.0)
-
-    altitude_m = calculate_altitude(gsd_input, focal, sensor, width, correction)
-    st.success(f"A(z) {priority_camera} kamera számított repülési magassága: {altitude_m:.1f} m")
+    st.success(f"A szükséges repülési magasság: {altitude:.1f} méter")
