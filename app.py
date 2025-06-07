@@ -1,39 +1,37 @@
 import streamlit as st
 
-# Kamera paraméterek (Mavic 3 Multispectral)
-RGB_PARAMS = {
-    "focal_length": 24.5,       # mm
-    "sensor_width": 17.3,       # mm
-    "image_width": 5280         # px
+# Kameraadatok
+CAMERA_SPECS = {
+    "RGB": {
+        "focal_length_mm": 24.5,
+        "sensor_width_mm": 17.3,
+        "image_width_px": 5280
+    },
+    "Multispektrális": {
+        "focal_length_mm": 4.7,
+        "sensor_width_mm": 6.4,
+        "image_width_px": 2592,
+        "correction_factor": 0.877
+    }
 }
 
-MULTI_PARAMS = {
-    "focal_length": 4.7,        # mm
-    "sensor_width": 6.4,        # mm
-    "image_width": 2592,        # px
-    "correction_factor": 0.877
-}
+def calculate_flight_altitude(gsd_cm_px, camera_type):
+    specs = CAMERA_SPECS[camera_type]
+    gsd_mm_px = gsd_cm_px * 10  # átváltás mm/px-re
+    base_altitude = (gsd_mm_px * specs["focal_length_mm"] * specs["image_width_px"]) / specs["sensor_width_mm"]
+    
+    if camera_type == "Multispektrális":
+        base_altitude *= specs.get("correction_factor", 1.0)
 
-# GSD → repülési magasság számítása
-def calculate_altitude(gsd_cm_per_px, camera_params, use_correction=False):
-    gsd_mm_per_px = gsd_cm_per_px * 10  # cm → mm
-    altitude = (gsd_mm_per_px * camera_params["focal_length"] * camera_params["image_width"]) / \
-               (camera_params["sensor_width"] * 1000)
-    if use_correction and "correction_factor" in camera_params:
-        altitude *= camera_params["correction_factor"]
-    return round(altitude, 2)
+    return base_altitude / 1000  # átváltás méterre
 
 # Streamlit UI
-st.title("Repülési Magasság Kalkulátor")
+st.title("DJI Mavic 3M Repülési Kalkulátor")
 
-drone_type = st.selectbox("Válassz drónt:", ["DJI Mavic 3M"])
-priority = st.radio("Melyik kamerára optimalizálsz?", ["RGB", "Multispektrális"])
-gsd = st.number_input("Cél GSD (cm/pixel):", min_value=0.1, step=0.1)
+drone = st.selectbox("Válaszd ki a drónt:", ["DJI Mavic 3M"])
+priority = st.selectbox("Mi a prioritás a repülés során?", ["RGB", "Multispektrális"])
+gsd_input = st.number_input("Add meg a kívánt GSD-t (cm/px):", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
 
-if st.button("Számítás"):
-    if priority == "RGB":
-        altitude = calculate_altitude(gsd, RGB_PARAMS)
-        st.success(f"RGB kamera esetén a repülési magasság: {altitude} méter")
-    else:
-        altitude = calculate_altitude(gsd, MULTI_PARAMS, use_correction=True)
-        st.success(f"Multispektrális kamera esetén a repülési magasság: {altitude} méter")
+if st.button("Számítás indítása"):
+    altitude = calculate_flight_altitude(gsd_input, priority)
+    st.success(f"A kívánt {gsd_input} cm/px GSD eléréséhez szükséges repülési magasság: {altitude:.1f} méter ({priority} kamera alapján)")
